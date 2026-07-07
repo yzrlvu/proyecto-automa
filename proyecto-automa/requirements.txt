@@ -4,7 +4,7 @@ uvicorn[standard]>=0.30
 
 # --- Orquestación multiagente ---
 langchain>=0.3
-langchain-anthropic>=0.3
+langchain-groq>=0.2
 langgraph>=0.4
 deepagents>=0.1
 

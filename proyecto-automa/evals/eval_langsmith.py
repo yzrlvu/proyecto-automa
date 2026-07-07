@@ -4,7 +4,7 @@ Sube un dataset de casos de prueba y evalúa el grafo con:
 - correctness (LLM-as-judge sobre respuesta vs. referencia)
 - enrutamiento correcto del supervisor
 
-Requiere LANGSMITH_API_KEY y ANTHROPIC_API_KEY en el entorno.
+Requiere LANGSMITH_API_KEY y GROQ_API_KEY en el entorno.
 Uso: python -m evals.eval_langsmith
 """
 from langsmith import Client

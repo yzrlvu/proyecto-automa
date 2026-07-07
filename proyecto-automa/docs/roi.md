@@ -31,11 +31,11 @@ lo que da trazabilidad completa sin instrumentación adicional.
 ### Costos del sistema (anual)
 | Concepto | Monto (S/) |
 |---|---|
-| API Claude (≈ 70 conversaciones/día × ~8k tokens) | 3,600 |
+| API Groq (capa gratuita/uso bajo, ≈ 70 conversaciones/día) | 0–1,200 |
 | Infraestructura (VPS + PostgreSQL gestionado) | 2,400 |
 | LangSmith (plan developer) | 1,500 |
 | Mantenimiento (10 h/mes × S/ 50) | 6,000 |
-| **Total anual** | **13,500** |
+| **Total anual** | **9,900–11,100** |
 
 ### Beneficios (anual)
 | Concepto | Cálculo | Monto (S/) |
@@ -46,17 +46,17 @@ lo que da trazabilidad completa sin instrumentación adicional.
 | **Total anual** | | **131,000** |
 
 ### Resultado
-- **ROI = (131,000 − 13,500) / 13,500 ≈ 870 %**
-- **Payback ≈ 1.2 meses**
+- **ROI = (131,000 − 10,500) / 10,500 ≈ 1,148 %** (punto medio del rango de costos)
+- **Payback ≈ 0.9 meses**
 - Escenario pesimista (solo 5 % de reducción de inasistencias y sin citas
-  incrementales): beneficio ≈ S/ 47,000 → ROI ≈ 248 %, payback < 4 meses.
+  incrementales): beneficio ≈ S/ 47,000 → ROI ≈ 348 %, payback < 3 meses.
 
 ## Análisis de sensibilidad
 
 | Variable | −50 % | Base | +50 % |
 |---|---|---|---|
-| Reducción de inasistencias (pp) | 7.5 → ROI 375 % | 15 → ROI 870 % | 22.5 → ROI 1,360 % |
-| Costo del sistema | ROI 1,840 % | ROI 870 % | ROI 560 % |
+| Reducción de inasistencias (pp) | 7.5 → ROI 495 % | 15 → ROI 1,148 % | 22.5 → ROI 1,800 % |
+| Costo del sistema | ROI 2,395 % | ROI 1,148 % | ROI 665 % |
 
 El ROI es positivo en todos los escenarios: la variable dominante es la
 reducción de inasistencias, que el sistema ataca directamente con

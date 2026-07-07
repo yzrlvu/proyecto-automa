@@ -16,7 +16,7 @@ from datetime import date
 from pathlib import Path
 from typing import Literal, TypedDict, Annotated
 
-from langchain_anthropic import ChatAnthropic
+from langchain_groq import ChatGroq
 from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
@@ -43,10 +43,10 @@ def _configure_langsmith() -> None:
         os.environ["LANGSMITH_PROJECT"] = s.langsmith_project
 
 
-def _llm() -> ChatAnthropic:
+def _llm() -> ChatGroq:
     s = get_settings()
-    return ChatAnthropic(model=s.llm_model, temperature=s.llm_temperature,
-                         max_tokens=s.llm_max_tokens, api_key=s.anthropic_api_key)
+    return ChatGroq(model=s.llm_model, temperature=s.llm_temperature,
+                    max_tokens=s.llm_max_tokens, api_key=s.groq_api_key)
 
 
 # ---------- Estado del grafo ----------

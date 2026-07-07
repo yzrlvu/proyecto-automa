@@ -11,9 +11,9 @@ class Settings(BaseSettings):
     environment: str = "development"
     api_prefix: str = "/api/v1"
 
-    # --- LLM (Anthropic) ---
-    anthropic_api_key: str = ""
-    llm_model: str = "claude-sonnet-4-5"
+    # --- LLM (Groq) ---
+    groq_api_key: str = ""
+    llm_model: str = "llama-3.3-70b-versatile"
     llm_temperature: float = 0.2
     llm_max_tokens: int = 1024
 

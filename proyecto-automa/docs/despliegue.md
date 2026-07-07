@@ -2,7 +2,7 @@
 
 ## 1. Requisitos
 - Docker + Docker Compose (o Python 3.12 + PostgreSQL 16 local)
-- Claves: `ANTHROPIC_API_KEY`, `LANGSMITH_API_KEY`, `TELEGRAM_BOT_TOKEN`
+- Claves: `GROQ_API_KEY`, `LANGSMITH_API_KEY`, `TELEGRAM_BOT_TOKEN`
 
 ## 2. Despliegue local con Docker (recomendado)
 ```bash
