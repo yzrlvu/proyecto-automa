@@ -4,6 +4,7 @@ Cada tool es la interfaz que los agentes LangGraph usan para actuar sobre el
 mundo (BD, notificaciones). La reserva usa SELECT ... FOR UPDATE para
 garantizar exclusividad ante concurrencia (sección 4.1 del informe).
 """
+import unicodedata
 from datetime import date, datetime, time
 
 from langchain_core.tools import tool
@@ -144,7 +145,10 @@ class SeguroInput(BaseModel):
 def verificar_seguro(dni: str, aseguradora: str) -> str:
     """Verifica cobertura del seguro (simulación de consulta a aseguradora, sección 4.3)."""
     cubiertas = {"rimac", "pacifico", "mapfre", "essalud", "sanitas"}
-    ok = aseguradora.strip().lower() in cubiertas
+    # Normaliza tildes ("Rímac" → "rimac") para comparar con el catálogo
+    normalizada = unicodedata.normalize("NFKD", aseguradora.strip().lower())
+    normalizada = "".join(c for c in normalizada if not unicodedata.combining(c))
+    ok = normalizada in cubiertas
     publicar("seguro.verificado", "agente_seguros", {"dni": dni, "aseguradora": aseguradora, "cubierto": ok})
     return ("Cobertura VERIFICADA: la clínica trabaja con esa aseguradora."
             if ok else "La aseguradora no tiene convenio; la cita será particular.")
