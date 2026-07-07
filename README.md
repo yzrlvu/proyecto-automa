@@ -1,3 +1,13 @@
+---
+title: Clínica San Gabriel — Asistente de Citas
+emoji: 🏥
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🏥 Sistema Automatizado de Gestión de Citas — Clínica San Gabriel
 
 **Grupo 10** — Escobedo Bopp · Montoya Granda · Salvador Mauricio
