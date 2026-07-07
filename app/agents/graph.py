@@ -43,9 +43,9 @@ def _configure_langsmith() -> None:
         os.environ["LANGSMITH_PROJECT"] = s.langsmith_project
 
 
-def _llm() -> ChatGroq:
+def _llm(model: str | None = None) -> ChatGroq:
     s = get_settings()
-    return ChatGroq(model=s.llm_model, temperature=s.llm_temperature,
+    return ChatGroq(model=model or s.llm_model, temperature=s.llm_temperature,
                     max_tokens=s.llm_max_tokens, api_key=s.groq_api_key)
 
 
@@ -106,7 +106,7 @@ def nodo_deep_agent(state: EstadoConversacion) -> dict:
     agent = create_deep_agent(
         tools=TOOLS_TRANSACCIONALES + [consultar_politicas_clinica],
         system_prompt=_load_prompt("deep_agent_v1.md") + _contexto_fecha(),
-        model=_llm(),
+        model=_llm(get_settings().deep_agent_model),
     )
     result = agent.invoke({"messages": state["messages"]})
     return {"messages": [result["messages"][-1]]}
