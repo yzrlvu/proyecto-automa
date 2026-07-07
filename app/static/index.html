@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clínica San Gabriel — Asistente de Citas</title>
+<style>
+  :root {
+    --primario: #0f766e;
+    --primario-claro: #14b8a6;
+    --fondo: #f0fdfa;
+    --burbuja-user: #0f766e;
+    --burbuja-bot: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: var(--fondo);
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  header {
+    background: var(--primario); color: #fff;
+    padding: 14px 20px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  header .logo {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: #fff; color: var(--primario);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: bold;
+  }
+  header h1 { font-size: 17px; }
+  header p { font-size: 12px; opacity: .85; }
+  #chat {
+    flex: 1; overflow-y: auto; padding: 20px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .msg {
+    max-width: 75%; padding: 10px 14px; border-radius: 14px;
+    font-size: 14px; line-height: 1.45; white-space: pre-wrap;
+    animation: entrar .15s ease-out;
+  }
+  @keyframes entrar { from { opacity: 0; transform: translateY(4px); } }
+  .user { align-self: flex-end; background: var(--burbuja-user); color: #fff; border-bottom-right-radius: 4px; }
+  .bot  { align-self: flex-start; background: var(--burbuja-bot); border: 1px solid #d1d5db; border-bottom-left-radius: 4px; }
+  .escribiendo { align-self: flex-start; color: #6b7280; font-size: 13px; font-style: italic; }
+  form {
+    display: flex; gap: 8px; padding: 14px 20px;
+    background: #fff; border-top: 1px solid #e5e7eb;
+  }
+  input {
+    flex: 1; padding: 11px 14px; font-size: 14px;
+    border: 1px solid #d1d5db; border-radius: 24px; outline: none;
+  }
+  input:focus { border-color: var(--primario-claro); }
+  button {
+    padding: 11px 22px; font-size: 14px; font-weight: 600;
+    background: var(--primario); color: #fff; border: none;
+    border-radius: 24px; cursor: pointer;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  .sugerencias { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 20px 10px; }
+  .sugerencias span {
+    font-size: 12px; padding: 6px 12px; border-radius: 16px;
+    background: #ccfbf1; color: var(--primario); cursor: pointer;
+    border: 1px solid #99f6e4;
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">✚</div>
+  <div>
+    <h1>Clínica San Gabriel</h1>
+    <p>Asistente virtual de citas — disponible 24/7</p>
+  </div>
+</header>
+
+<div id="chat">
+  <div class="msg bot">¡Hola! Soy el asistente virtual de la Clínica San Gabriel. Puedo ayudarte a agendar, confirmar o cancelar citas, y responder preguntas sobre nuestros servicios. ¿En qué te ayudo?</div>
+</div>
+
+<div class="sugerencias">
+  <span>Quiero agendar una cita con cardiología</span>
+  <span>¿Cuáles son los horarios de atención?</span>
+  <span>¿Trabajan con seguro Rímac?</span>
+</div>
+
+<form id="form">
+  <input id="input" placeholder="Escribe tu mensaje..." autocomplete="off" autofocus>
+  <button id="btn" type="submit">Enviar</button>
+</form>
+
+<script>
+const chat = document.getElementById("chat");
+const form = document.getElementById("form");
+const input = document.getElementById("input");
+const btn = document.getElementById("btn");
+const sessionId = crypto.randomUUID();
+
+function agregar(texto, clase) {
+  const div = document.createElement("div");
+  div.className = "msg " + clase;
+  div.textContent = texto;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+document.querySelectorAll(".sugerencias span").forEach(s =>
+  s.addEventListener("click", () => { input.value = s.textContent; form.requestSubmit(); }));
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const mensaje = input.value.trim();
+  if (!mensaje) return;
+  agregar(mensaje, "user");
+  input.value = ""; btn.disabled = true;
+  const espera = agregar("El asistente está escribiendo...", "escribiendo");
+  try {
+    const r = await fetch("/api/v1/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mensaje, session_id: sessionId }),
+    });
+    const data = await r.json();
+    espera.remove();
+    agregar(r.ok ? data.respuesta : "Lo siento, ocurrió un error. Intenta de nuevo.", "bot");
+  } catch {
+    espera.remove();
+    agregar("No se pudo conectar con el servidor. ¿Está encendida la API?", "bot");
+  } finally {
+    btn.disabled = false; input.focus();
+  }
+});
+</script>
+</body>
+</html>

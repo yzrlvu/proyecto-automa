@@ -3,6 +3,8 @@ from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from sqlalchemy import func, select
 
+from langchain_core.messages import AIMessage, HumanMessage
+
 from app.agents.graph import responder
 from app.core.config import get_settings
 from app.core.notificaciones import enviar_telegram
@@ -10,9 +12,14 @@ from app.models.db import Cita, EstadoCita, EventoSistema, get_session
 
 router = APIRouter()
 
+# Historial de conversación por sesión (en memoria; máx. 20 mensajes c/u)
+_conversaciones: dict[str, list] = {}
+_MAX_HISTORIAL = 20
+
 
 class ChatInput(BaseModel):
     mensaje: str
+    session_id: str = "default"
 
 
 @router.get("/health")
@@ -22,8 +29,12 @@ def health():
 
 @router.post("/chat")
 def chat(body: ChatInput):
-    """Canal web/app: conversa con el sistema multiagente."""
-    return {"respuesta": responder(body.mensaje)}
+    """Canal web/app: conversa con el sistema multiagente, con memoria por sesión."""
+    historial = _conversaciones.setdefault(body.session_id, [])
+    respuesta = responder(body.mensaje, historial)
+    historial += [HumanMessage(content=body.mensaje), AIMessage(content=respuesta)]
+    del historial[:-_MAX_HISTORIAL]
+    return {"respuesta": respuesta}
 
 
 @router.post("/webhook/telegram")
@@ -34,7 +45,10 @@ async def telegram_webhook(request: Request):
     chat_id = str((msg.get("chat") or {}).get("id", ""))
     texto = msg.get("text", "")
     if chat_id and texto:
-        respuesta = responder(texto)
+        historial = _conversaciones.setdefault(f"tg:{chat_id}", [])
+        respuesta = responder(texto, historial)
+        historial += [HumanMessage(content=texto), AIMessage(content=respuesta)]
+        del historial[:-_MAX_HISTORIAL]
         enviar_telegram(chat_id, respuesta)
     return {"ok": True}
 
