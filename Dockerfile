@@ -16,7 +16,7 @@ COPY . .
 
 # Pre-descarga el modelo de embeddings para que el arranque sea rápido
 RUN python -c "from langchain_huggingface import HuggingFaceEmbeddings; \
-    HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')"
+    HuggingFaceEmbeddings(model_name='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')"
 
 # En runtime no consultar el Hub: el modelo ya está en la imagen
 # (evita cuelgues por rate limiting de peticiones anónimas desde Spaces)

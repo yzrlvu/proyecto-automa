@@ -25,8 +25,10 @@ class Settings(BaseSettings):
 
     # --- RAG ---
     chroma_persist_dir: str = "./chroma_db"
-    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
-    rag_top_k: int = 4
+    # Multilingüe: la KB y las preguntas están en español (all-MiniLM-L6-v2
+    # es solo-inglés y rankeaba mal los chunks relevantes)
+    embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    rag_top_k: int = 6
 
     # --- Observabilidad (LangSmith) ---
     langsmith_tracing: bool = True
