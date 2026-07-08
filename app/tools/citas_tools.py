@@ -24,7 +24,9 @@ class DisponibilidadInput(BaseModel):
 
 class ReservaInput(BaseModel):
     dni: str = Field(description="DNI del paciente")
-    slot_id: int = Field(description="ID del slot elegido (obtenido de consultar_disponibilidad)")
+    # int | str: algunos modelos emiten el número como texto y Groq valida
+    # contra el JSON Schema antes de llegar a Pydantic. Se coerce en la tool.
+    slot_id: int | str = Field(description="ID numérico del slot elegido (obtenido de consultar_disponibilidad)")
 
 
 class GestionCitaInput(BaseModel):
@@ -59,8 +61,12 @@ def consultar_disponibilidad(especialidad: str, fecha: str) -> str:
 
 
 @tool(args_schema=ReservaInput)
-def reservar_cita(dni: str, slot_id: int) -> str:
+def reservar_cita(dni: str, slot_id: int | str) -> str:
     """Reserva un slot para el paciente. Adquiere lock de fila (FOR UPDATE) para evitar doble reserva."""
+    try:
+        slot_id = int(slot_id)
+    except (TypeError, ValueError):
+        return "slot_id inválido. Consulta la disponibilidad y usa el slot_id devuelto."
     session = get_session()
     try:
         paciente = session.execute(select(Paciente).where(Paciente.dni == dni)).scalar_one_or_none()

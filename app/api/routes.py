@@ -1,4 +1,6 @@
 """API HTTP (FastAPI): webhook de Telegram, chat directo y métricas de éxito/ROI."""
+import logging
+
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 from sqlalchemy import func, select
@@ -31,7 +33,12 @@ def health():
 def chat(body: ChatInput):
     """Canal web/app: conversa con el sistema multiagente, con memoria por sesión."""
     historial = _conversaciones.setdefault(body.session_id, [])
-    respuesta = responder(body.mensaje, historial)
+    try:
+        respuesta = responder(body.mensaje, historial)
+    except Exception:  # noqa: BLE001 — el LLM puede fallar (rate limit, tool call inválido)
+        logging.getLogger(__name__).exception("Error procesando mensaje del chat")
+        return {"respuesta": ("Lo siento, tuve un inconveniente procesando tu solicitud. "
+                              "¿Podrías intentarlo de nuevo, por favor?")}
     historial += [HumanMessage(content=body.mensaje), AIMessage(content=respuesta)]
     del historial[:-_MAX_HISTORIAL]
     return {"respuesta": respuesta}
