@@ -89,7 +89,7 @@ def nodo_agente_rag(state: EstadoConversacion) -> dict:
 def nodo_agente_reservas(state: EstadoConversacion) -> dict:
     agent = create_react_agent(
         _llm(), tools=TOOLS_TRANSACCIONALES,
-        prompt=_load_prompt("agente_reservas_v1.md") + _contexto_fecha(),
+        prompt=_load_prompt("agente_reservas_v2.md") + _contexto_fecha(),
     )
     result = agent.invoke({"messages": state["messages"]})
     return {"messages": [result["messages"][-1]]}
