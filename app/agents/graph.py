@@ -101,15 +101,51 @@ def nodo_agente_reservas(state: EstadoConversacion) -> dict:
 def nodo_deep_agent(state: EstadoConversacion) -> dict:
     """Deep Agent (plan-and-execute) para solicitudes complejas multi-paso.
 
-    Usa la librería `deepagents`, que añade planificación con TODO list,
-    sistema de archivos virtual y subagentes sobre LangGraph.
+    Usa la librería `deepagents` (planificación con TODO list, sistema de
+    archivos virtual) con un catálogo de sub-agentes especializados, cada uno
+    con tools acotadas a su rol (principio de mínimo privilegio).
     """
     from deepagents import create_deep_agent
 
+    from app.tools.citas_tools import (
+        cancelar_cita, confirmar_cita, consultar_disponibilidad,
+        listar_citas_paciente, registrar_paciente, reservar_cita, verificar_seguro,
+    )
+
+    modelo = _llm(get_settings().deep_agent_model)
+    subagentes = [
+        {
+            "name": "orquestador-reservas",
+            "description": ("Gestiona el ciclo de vida de citas: disponibilidad, registro de "
+                            "pacientes, reserva, confirmación, cancelación y listado."),
+            "system_prompt": _load_prompt("agente_reservas_v2.md") + _contexto_fecha(),
+            "tools": [consultar_disponibilidad, registrar_paciente, reservar_cita,
+                      confirmar_cita, cancelar_cita, listar_citas_paciente],
+            "model": modelo,
+        },
+        {
+            "name": "verificador-seguros",
+            "description": "Verifica la cobertura del seguro del paciente con la aseguradora.",
+            "system_prompt": ("Eres el verificador de seguros de la Clínica San Gabriel. "
+                              "Usa tu tool para comprobar cobertura y responde solo con el "
+                              "resultado de la verificación."),
+            "tools": [verificar_seguro],
+            "model": modelo,
+        },
+        {
+            "name": "consultor-politicas",
+            "description": ("Responde preguntas sobre políticas, tarifas, horarios y FAQ de la "
+                            "clínica usando la base de conocimiento (RAG)."),
+            "system_prompt": _load_prompt("agente_rag_v1.md"),
+            "tools": [consultar_politicas_clinica],
+            "model": modelo,
+        },
+    ]
+
     agent = create_deep_agent(
-        tools=TOOLS_TRANSACCIONALES + [consultar_politicas_clinica],
-        system_prompt=_load_prompt("deep_agent_v1.md") + _contexto_fecha(),
-        model=_llm(get_settings().deep_agent_model),
+        system_prompt=_load_prompt("deep_agent_v2.md") + _contexto_fecha(),
+        model=modelo,
+        subagents=subagentes,
     )
     result = agent.invoke({"messages": state["messages"]})
     return {"messages": [result["messages"][-1]]}
