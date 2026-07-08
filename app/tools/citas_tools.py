@@ -5,6 +5,7 @@ mundo (BD, notificaciones). La reserva usa SELECT ... FOR UPDATE para
 garantizar exclusividad ante concurrencia (sección 4.1 del informe).
 """
 import unicodedata
+import uuid
 from datetime import date, datetime, time
 
 from langchain_core.tools import tool
@@ -32,6 +33,18 @@ class ReservaInput(BaseModel):
 class GestionCitaInput(BaseModel):
     dni: str = Field(description="DNI del paciente")
     cita_id: str = Field(description="UUID de la cita")
+
+
+_CITA_ID_INVALIDO = ("cita_id inválido: debe ser el UUID exacto devuelto por las tools. "
+                     "Usa listar_citas_paciente para obtener el cita_id real de la cita.")
+
+
+def _parse_cita_id(cita_id: str) -> uuid.UUID | None:
+    """Valida el UUID antes de tocar la BD (los modelos a veces inventan ids)."""
+    try:
+        return uuid.UUID(str(cita_id).strip())
+    except (TypeError, ValueError):
+        return None
 
 
 # ---------- Tools ----------
@@ -102,9 +115,12 @@ def confirmar_cita(dni: str, cita_id: str) -> str:
 @tool(args_schema=GestionCitaInput)
 def cancelar_cita(dni: str, cita_id: str) -> str:
     """Cancela una cita y libera el slot para otros pacientes."""
+    cita_uuid = _parse_cita_id(cita_id)
+    if cita_uuid is None:
+        return _CITA_ID_INVALIDO
     session = get_session()
     try:
-        cita = session.get(Cita, cita_id)
+        cita = session.get(Cita, cita_uuid)
         if not cita or cita.paciente.dni != dni:
             return "Cita no encontrada para ese paciente."
         cita.estado = EstadoCita.CANCELADA
@@ -180,9 +196,12 @@ def listar_citas_paciente(dni: str) -> str:
 
 
 def _cambiar_estado(dni: str, cita_id: str, estado: EstadoCita, evento: str) -> str:
+    cita_uuid = _parse_cita_id(cita_id)
+    if cita_uuid is None:
+        return _CITA_ID_INVALIDO
     session = get_session()
     try:
-        cita = session.get(Cita, cita_id)
+        cita = session.get(Cita, cita_uuid)
         if not cita or cita.paciente.dni != dni:
             return "Cita no encontrada para ese paciente."
         cita.estado = estado
