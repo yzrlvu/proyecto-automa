@@ -18,6 +18,10 @@ COPY . .
 RUN python -c "from langchain_huggingface import HuggingFaceEmbeddings; \
     HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')"
 
+# En runtime no consultar el Hub: el modelo ya está en la imagen
+# (evita cuelgues por rate limiting de peticiones anónimas desde Spaces)
+ENV HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+
 RUN chown -R user:user /app
 USER user
 
