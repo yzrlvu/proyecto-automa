@@ -45,8 +45,11 @@ def _configure_langsmith() -> None:
 
 def _llm(model: str | None = None) -> ChatGroq:
     s = get_settings()
+    # max_retries alto: el free tier de Groq limita tokens/minuto y el SDK
+    # respeta el retry-after del 429, así el usuario no ve el error.
     return ChatGroq(model=model or s.llm_model, temperature=s.llm_temperature,
-                    max_tokens=s.llm_max_tokens, api_key=s.groq_api_key)
+                    max_tokens=s.llm_max_tokens, api_key=s.groq_api_key,
+                    max_retries=6)
 
 
 # ---------- Estado del grafo ----------
