@@ -55,13 +55,13 @@ curl -X POST http://localhost:8000/api/v1/chat \
 ```
 app/
 ├── agents/graph.py        # Grafo LangGraph: supervisor + RAG + reservas + deep agent
+├── agents/prompts.py      # Prompts de cada agente (constantes + changelog versionado)
 ├── tools/citas_tools.py   # Tools transaccionales (Pydantic + locks)
 ├── rag/retriever.py       # Pipeline RAG (Chroma, chunking, tool de consulta)
 ├── models/db.py           # Modelos SQLAlchemy (citas, slots, EventBus)
 ├── core/                  # Config, EventBus, notificaciones (Telegram→email)
 ├── scheduler/jobs.py      # APScheduler: recordatorios y liberación de cupos
 └── api/routes.py          # FastAPI: webhook Telegram, chat, métricas
-prompts/                   # Prompts versionados con changelog (v1, v2…)
 data/knowledge_base/       # Base de conocimiento del RAG
 evals/eval_langsmith.py    # Dataset + evaluadores en LangSmith
 tests/                     # Pruebas unitarias (pytest) — CI en GitHub Actions
@@ -92,7 +92,7 @@ python -m evals.eval_langsmith     # evaluación de enrutamiento/calidad en Lang
 | 2 | Arquitectura y diseño técnico | `docs/arquitectura.md` (Hub-and-Spoke, ADRs) |
 | 3 | Implementación (RAG, tools, LangGraph, Deep Agent) | `app/rag/`, `app/tools/`, `app/agents/graph.py` |
 | 4 | Observabilidad y evaluación (LangSmith) | Trazas automáticas + `evals/eval_langsmith.py` |
-| 5 | Calidad del código y prompts versionados | Tipado, Pydantic, `prompts/*_vN.md` con changelog |
+| 5 | Calidad del código y prompts versionados | Tipado, Pydantic, `app/agents/prompts.py` con changelog por versión |
 | 6 | Documentación | `README.md` + `docs/` |
 | 7 | Despliegue y operación | `deploy/`, `docs/despliegue.md`, CI |
 | 8 | Medición de éxito y ROI | `docs/roi.md` + endpoint `/api/v1/metricas` |

@@ -13,7 +13,6 @@ Cada nodo emite trazas a LangSmith automáticamente vía variables de entorno.
 """
 import os
 from datetime import date
-from pathlib import Path
 from typing import Literal, TypedDict, Annotated
 
 from langchain_groq import ChatGroq
@@ -23,16 +22,11 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field
 
+from app.agents import prompts
 from app.core.config import get_settings
 from app.core.event_bus import publicar
 from app.rag.retriever import consultar_politicas_clinica
 from app.tools.citas_tools import TOOLS_TRANSACCIONALES
-
-PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
-
-
-def _load_prompt(name: str) -> str:
-    return (PROMPTS_DIR / name).read_text(encoding="utf-8")
 
 
 def _configure_langsmith() -> None:
@@ -70,7 +64,7 @@ class DecisionRuta(BaseModel):
 def nodo_supervisor(state: EstadoConversacion) -> dict:
     llm = _llm().with_structured_output(DecisionRuta)
     decision = llm.invoke(
-        [SystemMessage(content=_load_prompt("supervisor_v2.md"))] + state["messages"]
+        [SystemMessage(content=prompts.SUPERVISOR)] + state["messages"]
     )
     publicar("mensaje.enrutado", "supervisor", {"ruta": decision.ruta})
     return {"ruta": decision.ruta}
@@ -83,7 +77,7 @@ def _contexto_fecha() -> str:
 def nodo_agente_rag(state: EstadoConversacion) -> dict:
     agent = create_react_agent(
         _llm(), tools=[consultar_politicas_clinica],
-        prompt=_load_prompt("agente_rag_v1.md"),
+        prompt=prompts.AGENTE_RAG,
     )
     result = agent.invoke({"messages": state["messages"]})
     return {"messages": [result["messages"][-1]]}
@@ -92,7 +86,7 @@ def nodo_agente_rag(state: EstadoConversacion) -> dict:
 def nodo_agente_reservas(state: EstadoConversacion) -> dict:
     agent = create_react_agent(
         _llm(), tools=TOOLS_TRANSACCIONALES,
-        prompt=_load_prompt("agente_reservas_v2.md") + _contexto_fecha(),
+        prompt=prompts.AGENTE_RESERVAS + _contexto_fecha(),
     )
     result = agent.invoke({"messages": state["messages"]})
     return {"messages": [result["messages"][-1]]}
@@ -118,7 +112,7 @@ def nodo_deep_agent(state: EstadoConversacion) -> dict:
             "name": "orquestador-reservas",
             "description": ("Gestiona el ciclo de vida de citas: disponibilidad, registro de "
                             "pacientes, reserva, confirmación, cancelación y listado."),
-            "system_prompt": _load_prompt("agente_reservas_v2.md") + _contexto_fecha(),
+            "system_prompt": prompts.AGENTE_RESERVAS + _contexto_fecha(),
             "tools": [consultar_disponibilidad, registrar_paciente, reservar_cita,
                       confirmar_cita, cancelar_cita, listar_citas_paciente],
             "model": modelo,
@@ -126,9 +120,7 @@ def nodo_deep_agent(state: EstadoConversacion) -> dict:
         {
             "name": "verificador-seguros",
             "description": "Verifica la cobertura del seguro del paciente con la aseguradora.",
-            "system_prompt": ("Eres el verificador de seguros de la Clínica San Gabriel. "
-                              "Usa tu tool para comprobar cobertura y responde solo con el "
-                              "resultado de la verificación."),
+            "system_prompt": prompts.VERIFICADOR_SEGUROS,
             "tools": [verificar_seguro],
             "model": modelo,
         },
@@ -136,14 +128,14 @@ def nodo_deep_agent(state: EstadoConversacion) -> dict:
             "name": "consultor-politicas",
             "description": ("Responde preguntas sobre políticas, tarifas, horarios y FAQ de la "
                             "clínica usando la base de conocimiento (RAG)."),
-            "system_prompt": _load_prompt("agente_rag_v1.md"),
+            "system_prompt": prompts.AGENTE_RAG,
             "tools": [consultar_politicas_clinica],
             "model": modelo,
         },
     ]
 
     agent = create_deep_agent(
-        system_prompt=_load_prompt("deep_agent_v2.md") + _contexto_fecha(),
+        system_prompt=prompts.DEEP_AGENT + _contexto_fecha(),
         model=modelo,
         subagents=subagentes,
     )
